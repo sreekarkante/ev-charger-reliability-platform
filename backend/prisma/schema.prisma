@@ -1,0 +1,99 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  COOLDOWN
+  SUSPENDED
+}
+
+enum StationStatus {
+  VERIFIED_WORKING
+  LIKELY_WORKING
+  UNCERTAIN
+  LIKELY_BROKEN
+  VERIFIED_BROKEN
+}
+
+enum ConnectorType {
+  CCS1
+  CCS2
+  CHAdeMO
+  TYPE2
+  NACS
+}
+
+enum ChargerType {
+  AC
+  DC_FAST
+}
+
+model User {
+  id                        String        @id @default(uuid())
+  name                      String
+  email                     String        @unique
+  password_hash             String
+  role                      Role          @default(USER)
+  trust_score               Float         @default(0.5)
+  total_reports             Int           @default(0)
+  verified_correct_reports  Int           @default(0)
+  account_status            AccountStatus @default(ACTIVE)
+  cooldown_until            DateTime?
+  last_report_time          DateTime?
+  last_report_lat           Float?
+  last_report_lng           Float?
+  reports                   Report[]
+  created_at                DateTime      @default(now())
+}
+
+model ChargingStation {
+  id               String        @id @default(uuid())
+  name             String
+  latitude         Float
+  longitude        Float
+  charger_type     ChargerType
+  connector_type   ConnectorType
+  power_output     Float         // in kW
+  status           StationStatus @default(UNCERTAIN)
+  confidence_score Float         @default(0.0)
+  queue_estimate   Float         @default(0.0) // Average wait time in minutes
+  total_reports    Int           @default(0)
+  reports          Report[]
+  created_at       DateTime      @default(now())
+}
+
+model Report {
+  id            String          @id @default(uuid())
+  user_id       String
+  station_id    String
+  report_type   String          // "WORKING", "BROKEN", "CONFIRM_WORKING", "CONFIRM_BROKEN"
+  queue_length  Int             @default(0)  // Number of cars waiting
+  wait_time     Int             @default(0)  // Estimated wait time in minutes
+  image_url     String?
+  gps_latitude  Float
+  gps_longitude Float
+  weight        Float           @default(1.0)
+  status        String          @default("PENDING") // "PENDING", "VERIFIED", "CONFLICTED"
+  created_at    DateTime        @default(now())
+  
+  user          User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  station       ChargingStation @relation(fields: [station_id], references: [id], onDelete: Cascade)
+}
+
+model AnalyticsLog {
+  id         String   @id @default(uuid())
+  event_type String   // "NEW_REPORT", "SUSPICIOUS_ACTIVITY", "STATUS_CHANGE", "ABUSE_BAN"
+  metadata   Json
+  created_at DateTime @default(now())
+}

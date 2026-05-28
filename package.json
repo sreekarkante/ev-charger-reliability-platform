@@ -1,0 +1,20 @@
+{
+  "name": "ev-charger-reliability-platform",
+  "version": "1.0.0",
+  "description": "Intelligent EV Charger Reliability & Availability smart-city coordination platform.",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && npm run install:backend && npm run install:frontend",
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "prisma:generate": "cd backend && npx prisma generate",
+    "prisma:migrate": "cd backend && npx prisma migrate dev",
+    "db:seed": "cd backend && node src/utils/seed.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
